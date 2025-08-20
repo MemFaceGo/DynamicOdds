@@ -1,9 +1,9 @@
-local DECIMAL_POINTS = 3
-local COMMAS_DECIMAL_POINTS = 0
-local SUFFIX_DECIMAL_POINTS = 1
+local DECIMAL_POINTS = 3 --|| 0.123%, 1.234%, 12.345% by default
+local COMMAS_DECIMAL_POINTS = 0 --|| 1/1,234 by default (1 would display 1/1,234.5)
+local SUFFIX_DECIMAL_POINTS = 1 --|| 1/1.2K, 1/12.3M, 1/123.4B, etc. by default
 
-local MAX_COMMAS = 5
-local PERCENT_THRESHOLD = 0.0001
+local MAX_COMMAS = 5 --|| Display commas form (1/-,--- instead of 1/-.-K) up to 1/100,000 (1/1e5) by default
+local PERCENT_THRESHOLD = 0.0001 --|| 0.01% or 1/10,000 by default
 
 local SuffixList = {
 	Beginning = {"K","M","B"},
@@ -16,6 +16,42 @@ local module = {}
 
 local Odds = {}
 Odds.__index = Odds
+
+--------------------------------------||
+--| 
+--|			CUSTOM ENUMS
+--| 
+--------------------------------------||
+
+module.Enum = {
+	StaticGroup = {
+		Dynamic = 0,
+		Simple = 1,
+		InverseSimple = 2
+	}
+}
+
+local enumFunctions = {
+	StaticGroup = {
+		[0] = function(oddsList: {number}) : {number}
+			return nil
+		end,
+		[1] = function(oddsList: {number}) : {number}
+			local staticGroup = {}
+			for i = 1, #oddsList do
+				table.insert(staticGroup, i)
+			end
+			return staticGroup
+		end,
+		[2] = function(oddsList: {number}) : {number}
+			local staticGroup = {}
+			for i = #oddsList, 1, -1 do
+				table.insert(staticGroup, i)
+			end
+			return staticGroup
+		end,
+	}
+}
 
 --------------------------------------||
 --| 
@@ -233,7 +269,9 @@ end
 
 errorHandler.StaticGroups = function(staticGroups: any, isInit: boolean, oddsList: {number}) : {number}
 	if staticGroups ~= nil then
-		if typeof(staticGroups) ~= 'table' then
+		if typeof(staticGroups) == 'number' then
+			return enumFunctions.StaticGroup[staticGroups](oddsList)
+		elseif typeof(staticGroups) ~= 'table' then
 			warn('[DynamicOdds]: Static influence groups list must be a table or nil')
 			return nil
 		elseif #staticGroups ~= #oddsList then
